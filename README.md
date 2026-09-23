@@ -13,13 +13,13 @@ Two modules, on purpose small:
 
 ## Install
 
-Not on PyPI yet. From a checkout:
-
 ```
-pip install .
+pip install motionmcp-client-sdk
 ```
 
-or, for development, `pip install -e ".[dev]"` and `pytest`.
+From a checkout, `pip install .`; for development, `pip install -e ".[dev]"`
+and `pytest`. Releases are tags `vX.Y.Z` on `main`, published to PyPI by
+`.github/workflows/publish.yml`.
 
 Python 3.9 or newer. numpy is pinned by interpreter version (1.x below
 Python 3.13, 2.x from 3.13 on) to match the wheels of GUI toolkits that
