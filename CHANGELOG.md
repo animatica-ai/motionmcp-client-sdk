@@ -6,8 +6,10 @@ project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-24
+
 ### Added
-- First public cut, version 0.1.0: `motionmcp_client.client` (capabilities,
+- First public cut: `motionmcp_client.client` (capabilities,
   probe, `generate` with the 200 / 202-and-poll paths, `headers=` for an
   embedding application's identity) and `motionmcp_client.gltf_parser`
   (`parse_gltf`, `parse_gltf_samples`, `xyzw_to_rotmat`). Standard library on
