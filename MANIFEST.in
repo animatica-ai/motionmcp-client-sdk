@@ -1,0 +1,5 @@
+# The sdist carries the whole test suite, not the half setuptools guesses at:
+# conftest.py and gltf_doc.py are what make test_*.py runnable from a tarball.
+graft tests
+include CHANGELOG.md CONTRIBUTING.md
+global-exclude __pycache__ *.py[cod]
