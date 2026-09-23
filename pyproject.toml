@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "motionmcp-client-sdk"
+dynamic = ["version"]
+description = "A client for the MMCP protocol: request a motion, read back a glTF. Standard library for the wire, numpy for the parse."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Animatica"}]
+# 3.9 is the oldest interpreter an embedding application still ships.
+requires-python = ">=3.9"
+# The split is at the Python version: wheels of GUI toolkits built for
+# Python <= 3.12 expect NumPy 1.x, and Python 3.13 has no NumPy 1.x wheel.
+dependencies = [
+    "numpy<2; python_version < '3.13'",
+    "numpy>=2; python_version >= '3.13'",
+]
+# No license classifier: PEP 639 makes the `license` expression above the
+# single source, and current setuptools refuses both at once.
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+]
+
+[project.urls]
+Homepage = "https://github.com/animatica-ai/motionmcp-client-sdk"
+Protocol = "https://github.com/animatica-ai/motionmcp"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.dynamic]
+version = {attr = "motionmcp_client.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["motionmcp_client*"]
