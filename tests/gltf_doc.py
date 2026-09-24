@@ -11,6 +11,8 @@ builder.
 from __future__ import annotations
 
 import base64
+import copy
+import json
 import math
 import struct
 
@@ -82,3 +84,27 @@ def build_gltf(num_samples=1, contacts=None, with_rotations=True):
     if contacts is not None:
         doc["extensions"] = {"MMCP_motion": {"samples": contacts}}
     return doc
+
+
+def build_glb(doc, with_bin=True):
+    """Pack *doc* (e.g. from :func:`build_gltf`) as a binary glTF.
+
+    Buffer 0's base64 ``data:`` URI is dropped and its bytes go in the BIN
+    chunk instead, zero-padded to 4 bytes; the JSON chunk is space-padded.
+    ``with_bin=False`` packs the document as-is (buffer keeps its ``data:``
+    URI) with no BIN chunk. *doc* itself is not modified.
+    """
+    doc = copy.deepcopy(doc)
+    bin_data = None
+    buffers = doc.get("buffers") or []
+    if with_bin and buffers and str(buffers[0].get("uri", "")).startswith("data:"):
+        bin_data = base64.b64decode(buffers[0].pop("uri").split(",", 1)[1])
+        buffers[0]["byteLength"] = len(bin_data)
+
+    json_data = json.dumps(doc).encode("utf-8")
+    json_data += b" " * (-len(json_data) % 4)
+    chunks = struct.pack("<II", len(json_data), 0x4E4F534A) + json_data
+    if bin_data is not None:
+        bin_data += b"\x00" * (-len(bin_data) % 4)
+        chunks += struct.pack("<II", len(bin_data), 0x004E4942) + bin_data
+    return struct.pack("<4sII", b"glTF", 2, 12 + len(chunks)) + chunks
