@@ -1,7 +1,5 @@
 """pick_model: the Model dropdown used to select a name nothing read."""
 
-import pytest
-
 from motionmcp_client.client import pick_model
 
 CAPS = {"models": [
@@ -58,7 +56,7 @@ class TestRetargetState:
                                 (None, "unknown")):
             payload = _json.dumps({"status": "ok", "retargeting": value}).encode()
             monkeypatch.setattr(mmcp_client.urllib.request, "urlopen",
-                                lambda *a, **k: _Resp(payload))
+                                lambda *a, payload=payload, **k: _Resp(payload))
             assert mmcp_client.retarget_state("http://x") == expected
 
     def test_unreachable_server_is_unknown_not_a_refusal(self):
@@ -90,7 +88,7 @@ class TestCachedCapabilities:
                                           {"id": "ardy-core-rp"}]}).encode()
         mmcp_client.clear_capabilities_cache()
         monkeypatch.setattr(mmcp_client.urllib.request, "urlopen",
-                            lambda *a, **k: _Resp(payload))
+                            lambda *a, payload=payload, **k: _Resp(payload))
         mmcp_client.get_capabilities("http://x:8000")
 
         caps = mmcp_client.cached_capabilities("http://x:8000")

@@ -20,7 +20,6 @@ import pytest
 from gltf_doc import build_gltf
 from motionmcp_client.gltf_parser import parse_gltf, parse_gltf_samples
 
-
 # ---------------------------------------------------------------------------
 # The golden values
 # ---------------------------------------------------------------------------

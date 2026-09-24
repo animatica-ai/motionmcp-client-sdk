@@ -24,6 +24,8 @@ request that STARTS a generation and on nothing else: never on
 caller's question to answer; this module answers for the protocol alone.
 """
 
+from __future__ import annotations
+
 import json
 import time
 import urllib.error
@@ -46,9 +48,11 @@ __all__ = [
 
 _DEFAULT_TIMEOUT = 600.0  # cloud cold-start + inference can take up to ~5 min
 
+ProbeStatus = Literal["online", "unreachable", "auth_required", "http_error", "bad_response"]
+
 # MmcpError.code -> ProbeResult.status. Codes not listed (transport, timeout,
 # anything unmapped) fall back to "unreachable" so probe_server never raises.
-_PROBE_STATUS_BY_CODE = {
+_PROBE_STATUS_BY_CODE: dict[str, ProbeStatus] = {
     "connection_failed": "unreachable",
     "auth_required":     "auth_required",
     "http_error":        "http_error",
@@ -69,7 +73,7 @@ class MmcpError(RuntimeError):
         self.details = details or {}
 
 
-_capabilities_cache = {}
+_capabilities_cache: dict = {}
 
 
 def get_capabilities(server_url, timeout=10.0, use_cache=True, access_token=None):
@@ -245,7 +249,7 @@ class ProbeResult:
     """
 
     ok:           bool
-    status:       Literal["online", "unreachable", "auth_required", "http_error", "bad_response"]
+    status:       ProbeStatus
     message:      str
     capabilities: Optional[dict] = None
 
@@ -264,7 +268,7 @@ def probe_server(server_url, *, timeout=5.0, access_token=None) -> ProbeResult:
             server_url, timeout=timeout, use_cache=False, access_token=access_token,
         )
     except MmcpError as exc:
-        status = _PROBE_STATUS_BY_CODE.get(exc.code, "unreachable")
+        status: ProbeStatus = _PROBE_STATUS_BY_CODE.get(exc.code, "unreachable")
         return ProbeResult(ok=False, status=status, message=str(exc))
     return ProbeResult(ok=True, status="online", message="Server is reachable.", capabilities=caps)
 
