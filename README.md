@@ -1,5 +1,12 @@
 # motionmcp-client-sdk
 
+> **Moved.** This client now lives in
+> [`motionmcp`](https://github.com/animatica-ai/motionmcp) as the
+> `motionmcp.client` subpackage of `motionmcp-sdk` (0.6.0 and later):
+> `pip install motionmcp-sdk` brings the client and numpy, nothing else.
+> This repository is kept read-only for the history of `0.1.0`; issues and
+> pull requests go to `motionmcp`.
+
 A Python client for the [MMCP protocol](https://github.com/animatica-ai/motionmcp):
 ask a motion server for a motion, read the glTF it answers with.
 
