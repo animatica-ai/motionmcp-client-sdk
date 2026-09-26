@@ -1,13 +1,22 @@
 # motionmcp-client-sdk
 
+> **Moved.** This client now lives in
+> [`motionmcp`](https://github.com/animatica-ai/motionmcp) as the
+> `motionmcp.client` subpackage of `motionmcp-sdk` (0.6.0 and later):
+> `pip install motionmcp-sdk` brings the client and numpy, nothing else.
+> This repository is kept read-only for the history of `0.1.0`; issues and
+> pull requests go to `motionmcp`.
+
 A Python client for the [MMCP protocol](https://github.com/animatica-ai/motionmcp):
 ask a motion server for a motion, read the glTF it answers with.
 
-Two modules, on purpose small:
+Three modules, on purpose small:
 
 * `motionmcp_client.client` speaks the protocol over the standard library
   alone. No `requests`, no `httpx` -- it is built to run inside interpreters
   embedded in other applications, whose site-packages nobody owns.
+* `motionmcp_client.glb` unpacks a binary glTF (`.glb`) answer into the same
+  JSON document the client returns for `model/gltf+json`. Standard library too.
 * `motionmcp_client.gltf_parser` turns the server's glTF 2.0 document into
   plain arrays. numpy is its only dependency.
 
@@ -30,7 +39,7 @@ embed alongside it.
 ```python
 from motionmcp_client import client, gltf_parser
 
-caps = client.get_capabilities("http://127.0.0.1:8000")   # cached per URL per session
+caps = client.get_capabilities("http://127.0.0.1:8000")   # cached per (url, access_token)
 model = client.pick_model(caps, wanted="kimodo")           # a model id from the capabilities
 segments = client.model_supported_segments(model)         # which body segments it drives
 
@@ -41,21 +50,37 @@ doc = client.generate("http://127.0.0.1:8000", request_body,
 samples = gltf_parser.parse_gltf_samples(doc)              # one motion_data dict per sample
 ```
 
-* `get_capabilities`, `cached_capabilities`, `clear_capabilities_cache`
+* `get_capabilities`, `cached_capabilities`, `clear_capabilities_cache` -- the
+  cache key is `(server_url, access_token)`, so two accounts against the same
+  server don't collide.
 * `probe_server` -> `ProbeResult`, `retarget_state`
 * `pick_model`, `model_supported_segments`
 * `generate` -- handles both the synchronous `200` and the `202 Accepted`
   plus polling pattern; raises `MmcpError` on any transport or server failure.
   `headers` lets an embedding application attach its own identity; it rides on
-  the request that starts a generation and on nothing else.
+  the request that starts a generation and on nothing else. A server may
+  answer with `model/gltf-binary` (GLB) instead of JSON; it is unpacked into
+  the same glTF JSON document by `motionmcp_client.glb.glb_to_gltf`.
+* `MmcpError.details` on an HTTP failure -- the server's own `details` when
+  its error envelope carries them, plus `status` (the HTTP status, unless
+  the server already named one), `retry_after` (seconds, from the
+  `Retry-After` header) and `request_id` (from `X-Request-ID`, or `X-Job-Id`
+  if that is absent) when the server sent them.
 * `parse_gltf`, `parse_gltf_samples`, `xyzw_to_rotmat`
 
-## Vendoring
+## Testing
 
-Applications that cannot `pip install` into their interpreter copy the
-`motionmcp_client/` directory next to their own code and record the commit
-it came from. The package has no import-time side effects and no
-configuration, so a copy is the whole thing.
+```
+pip install -e ".[dev]"
+pytest tests -q
+ruff check .
+mypy motionmcp_client
+```
+
+`tests/fake_server.py` runs a real `ThreadingHTTPServer` on `127.0.0.1` so
+wire-level behaviour -- headers, `Location`/`Retry-After`, GLB responses --
+is exercised end to end instead of through a monkeypatched `urlopen`. CI runs
+pytest on Python 3.9 and 3.13, and ruff and mypy on 3.13.
 
 ## Where it comes from
 

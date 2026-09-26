@@ -32,10 +32,20 @@ Homepage = "https://github.com/animatica-ai/motionmcp-client-sdk"
 Protocol = "https://github.com/animatica-ai/motionmcp"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "ruff", "mypy"]
 
 [tool.setuptools.dynamic]
 version = {attr = "motionmcp_client.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["motionmcp_client*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["B905"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["motionmcp_client", "gltf_doc"]
