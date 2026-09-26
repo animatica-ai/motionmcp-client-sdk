@@ -43,6 +43,10 @@ project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - mypy findings in `motionmcp_client/client.py`.
 
+### Removed
+- The "Vendoring" section of the README. How a consumer lays this package
+  into its interpreter is the consumer's concern, not this library's.
+
 ## [0.1.0] - 2026-09-24
 
 ### Added

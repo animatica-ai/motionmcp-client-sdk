@@ -75,13 +75,6 @@ wire-level behaviour -- headers, `Location`/`Retry-After`, GLB responses --
 is exercised end to end instead of through a monkeypatched `urlopen`. CI runs
 pytest on Python 3.9 and 3.13, and ruff and mypy on 3.13.
 
-## Vendoring
-
-Applications that cannot `pip install` into their interpreter copy the
-`motionmcp_client/` directory next to their own code and record the commit
-it came from. The package has no import-time side effects and no
-configuration, so a copy is the whole thing.
-
 ## Where it comes from
 
 This client was cut out of Animatica's private core on 2026-09-24; the
