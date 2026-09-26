@@ -6,6 +6,10 @@ project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+The changes below never shipped from this repository. They went, together
+with the whole client, into `motionmcp-sdk` 0.6.0 as `motionmcp.client`;
+this repository is archived and there will be no further release here.
+
 ### Added
 - GLB (`model/gltf-binary`) responses in `generate`, on the synchronous path
   and after a 202 alike, unpacked into
