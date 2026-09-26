@@ -1,6 +1,4 @@
-"""pick_model: the Model dropdown used to select a name nothing read."""
-
-import pytest
+"""pick_model: the model the caller asked for used to be ignored."""
 
 from motionmcp_client.client import pick_model
 
@@ -58,7 +56,7 @@ class TestRetargetState:
                                 (None, "unknown")):
             payload = _json.dumps({"status": "ok", "retargeting": value}).encode()
             monkeypatch.setattr(mmcp_client.urllib.request, "urlopen",
-                                lambda *a, **k: _Resp(payload))
+                                lambda *a, payload=payload, **k: _Resp(payload))
             assert mmcp_client.retarget_state("http://x") == expected
 
     def test_unreachable_server_is_unknown_not_a_refusal(self):
@@ -104,3 +102,74 @@ class TestCachedCapabilities:
         from motionmcp_client import client as mmcp_client
         mmcp_client.clear_capabilities_cache()
         assert mmcp_client.cached_capabilities("http://127.0.0.1:9") is None
+
+    @staticmethod
+    def _serve_per_token(monkeypatch):
+        """Fake urlopen answering with the model list of the Bearer token's
+        account; returns the list of Authorization headers it was called with."""
+        import io
+        import json as _json
+
+        from motionmcp_client import client as mmcp_client
+
+        class _Resp(io.BytesIO):
+            status = 200
+            headers = {"Content-Type": "application/json"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        calls = []
+
+        def _urlopen(req, *a, **k):
+            auth = req.get_header("Authorization")
+            calls.append(auth)
+            model = {None: "local-rp", "Bearer tok-a": "model-a",
+                     "Bearer tok-b": "model-b"}[auth]
+            return _Resp(_json.dumps({"models": [{"id": model}]}).encode())
+
+        mmcp_client.clear_capabilities_cache()
+        monkeypatch.setattr(mmcp_client.urllib.request, "urlopen", _urlopen)
+        return mmcp_client, calls
+
+    def test_two_tokens_get_two_entries(self, monkeypatch):
+        mmcp_client, calls = self._serve_per_token(monkeypatch)
+        a = mmcp_client.get_capabilities("http://x:8000", access_token="tok-a")
+        b = mmcp_client.get_capabilities("http://x:8000", access_token="tok-b")
+        assert a["models"][0]["id"] == "model-a"
+        assert b["models"][0]["id"] == "model-b"
+        assert len(calls) == 2
+        assert mmcp_client.cached_capabilities(
+            "http://x:8000", access_token="tok-a")["models"][0]["id"] == "model-a"
+        assert mmcp_client.cached_capabilities(
+            "http://x:8000", access_token="tok-b")["models"][0]["id"] == "model-b"
+
+    def test_same_token_hits_cache_without_network(self, monkeypatch):
+        mmcp_client, calls = self._serve_per_token(monkeypatch)
+        first = mmcp_client.get_capabilities("http://x:8000", access_token="tok-a")
+        again = mmcp_client.get_capabilities("http://x:8000", access_token="tok-a")
+        assert again is first
+        assert calls == ["Bearer tok-a"]
+
+    def test_no_token_and_token_are_separate_entries(self, monkeypatch):
+        mmcp_client, calls = self._serve_per_token(monkeypatch)
+        mmcp_client.get_capabilities("http://x:8000")
+        assert mmcp_client.cached_capabilities(
+            "http://x:8000", access_token="tok-a") is None
+        mmcp_client.get_capabilities("http://x:8000", access_token="tok-a")
+        assert mmcp_client.cached_capabilities(
+            "http://x:8000")["models"][0]["id"] == "local-rp"
+        assert mmcp_client.cached_capabilities(
+            "http://x:8000", access_token="tok-a")["models"][0]["id"] == "model-a"
+        assert len(calls) == 2
+
+    def test_trailing_slash_hits_same_token_entry(self, monkeypatch):
+        mmcp_client, calls = self._serve_per_token(monkeypatch)
+        mmcp_client.get_capabilities("http://x:8000", access_token="tok-a")
+        mmcp_client.get_capabilities("http://x:8000/", access_token="tok-a")
+        assert len(calls) == 1
+        assert mmcp_client.cached_capabilities(
+            "http://x:8000/", access_token="tok-a")["models"][0]["id"] == "model-a"
